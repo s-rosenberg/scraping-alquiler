@@ -1,0 +1,12 @@
+solo dueños
+
+se puede hacer un post con los valores que se requieren
+es algo complejo y ni siquiera devuelve la info muy comoda (en un json)
+
+donde buscar:
+https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=2 (GBA)
+https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=1 (CABA)
+
+checkboxs = browser.find_elements_by_xpath("//input[@type='checkbox']")
+checkboxs = [c.find_element_by_xpath('..') for c in checkboxs]
+filtro = ('casa', 'departamento', 'ph', 'alquiler')
