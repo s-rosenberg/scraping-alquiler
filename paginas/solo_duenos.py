@@ -1,4 +1,6 @@
 from handles.selenium_handler import SeleniumHandler
+from bs4 import BeautifulSoup
+import requests
 import time
 import re
 
@@ -8,6 +10,7 @@ class SoloDuenos:
         self.handler = SeleniumHandler()
         self.driver = self.handler.driver
         self.base_url = 'https://www.soloduenos.com/'
+        self.session = requests.session()
         self.main()
 
     def main(self):
@@ -20,6 +23,13 @@ class SoloDuenos:
         for url in urls:
             propiedades += self.get_propiedades(url)
 
+        for propiedad in propiedades:
+            self.get_data(propiedad)
+
+    def get_date(self, propiedad):
+        response = self.session.get(propiedad)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
     def get_propiedades(self, url):
         self.driver.get(url)
         checkboxs = self.driver.find_elements_by_xpath("//input[@type='checkbox']")
