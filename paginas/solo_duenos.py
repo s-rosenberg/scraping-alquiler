@@ -16,7 +16,7 @@ class SoloDuenos:
     def main(self):
         urls = [
             'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=2', #(GBA)
-            'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=1'  #(CABA)
+            # 'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=1'  #(CABA)
         ]        
 
         propiedades = []
@@ -26,10 +26,112 @@ class SoloDuenos:
         for propiedad in propiedades:
             self.get_data(propiedad)
 
-    def get_date(self, propiedad):
+    def get_data(self, propiedad):
         response = self.session.get(propiedad)
         soup = BeautifulSoup(response.text, 'html.parser')
+        precio_ubicacion = self.get_one(soup.find_all('div',{'style':"margin-top:15px; margin-bottom:2px; box-shadow: 0px 1px 7px grey; height:28px; width:775px"}),'alquiler')
+        precio, ubicacion = self.parse_precio(precio_ubicacion)
+        direccion = self.get_one(soup.find_all('div',{'style':'height:28px; box-shadow:0px 2px 7px grey; clear:both; width:775px; margin-bottom:5px'}),'dirección')
+        direccion = self.parse_direccion(direccion)
+        data_inmueble = self.parse_data_inmueble(soup.find('div',{'name':'datos-ficha'}))
         
+        print(propiedad)
+        print(precio)
+        print(ubicacion)
+        print(direccion)
+        print(data_inmueble)
+        print()
+    def get_one(self, soup, text):
+        for item in soup:
+            if text in item.text.lower():
+                return item
+    
+    def parse_precio(self, data):
+        divs = data.find_all('div')
+        ubicacion_next = False
+        ubicacion = None
+        precio = None
+        for div in divs:
+            if div.find_all('div') and len(div.find_all('div')) > 1:
+                continue
+            if ubicacion_next and not ubicacion:
+                ubicacion = self.clean(div.text) 
+                continue
+            if not ubicacion_next and 'en:' in div.text.lower():
+                ubicacion_next = True
+                continue
+            if ubicacion:
+                precio = self.clean(div.text)
+                precio = precio.split('$')[-1]
+                if 's' in precio or 'venta' in precio.lower():
+                    continue
+                precio = int(precio.replace('.','').replace(',',''))
+            
+        return precio, ubicacion
+        
+    def parse_direccion(self, data):
+        divs = data.find_all('div')
+        direccion_next = False
+        direccion = None
+        for div in divs:
+            if div.find_all('div') and len(div.find_all('div')) > 1:
+                continue
+            if direccion_next:
+                direccion = self.clean(div.text) 
+                return direccion
+            if 'dirección:' in div.text.lower():
+                direccion_next = True 
+        
+        
+    def parse_data_inmueble(self, data):
+        data_out = {}
+        rows = data.find_all('tr')
+        notas = False
+        for row in rows:
+            if 'notas' in row.text.lower():
+                notas = True
+                continue
+            if notas:
+                data_notas = row.find('p')
+                data_notas = self.clean(data_notas) if data_notas else None
+                continue
+            if notas and data_notas:
+                data_out['Notas'] = data_notas
+            t_datas = row.find_all('td')
+            key = None
+            value = None
+            for t_data in t_datas:
+                if t_data.find_all('td') and len(t_data.find_all('td')) > 1:
+                    continue
+                if key:
+                    value = self.clean(t_data.text)
+                    if value == '' or value == None:
+                        value = t_data.find('img')
+                        if value and value.get('src') == 'Imagenes/oknuevo.gif':
+                            value = True
+                        else: 
+                            value = False
+                if ':' in t_data.text and not value:
+                    key = self.clean(t_data.text)
+                if key and value != None:
+                    data_out[key] = value
+                    key = None
+                    value = None
+        if 'Expensas' in data_out:
+            expensas = data_out['Expensas']
+            expensas = expensas.replace('.','').replace(',','')
+            expensas = int(re.findall('\d+',expensas)[0])
+            data_out['Expensas'] = expensas
+        return data_out
+
+    def clean(self, text):
+        replace = ['\r','\n','\t']
+        for rep in replace:
+            text = text.replace(rep,'')
+        text = text.strip().strip(':').strip()
+        return text
+
+
     def get_propiedades(self, url):
         self.driver.get(url)
         checkboxs = self.driver.find_elements_by_xpath("//input[@type='checkbox']")
