@@ -4,6 +4,11 @@ import requests
 import time
 import re
 
+# TODO insert a bbdd (handle)
+# implementar filtros (esto seria en modulo aparte)
+# implementar alertas (modulo aparte)
+# implementar crontab
+
 class SoloDuenos:
     def __init__(self):
         self.filtro = ('casa', 'departamento', 'ph', 'alquiler')
@@ -16,7 +21,7 @@ class SoloDuenos:
     def main(self):
         urls = [
             'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=2', #(GBA)
-            # 'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=1'  #(CABA)
+            'https://www.soloduenos.com/BusquedaGeneral.asp?cmbZona=1'  #(CABA)
         ]        
 
         propiedades = []
@@ -27,20 +32,21 @@ class SoloDuenos:
             self.get_data(propiedad)
 
     def get_data(self, propiedad):
+        print(propiedad)
         response = self.session.get(propiedad)
         soup = BeautifulSoup(response.text, 'html.parser')
-        precio_ubicacion = self.get_one(soup.find_all('div',{'style':"margin-top:15px; margin-bottom:2px; box-shadow: 0px 1px 7px grey; height:28px; width:775px"}),'alquiler')
-        precio, ubicacion = self.parse_precio(precio_ubicacion)
-        direccion = self.get_one(soup.find_all('div',{'style':'height:28px; box-shadow:0px 2px 7px grey; clear:both; width:775px; margin-bottom:5px'}),'dirección')
+        precio_ubicacion = self.get_one(soup.find_all('div'),'alquiler')
+        precio, ubicacion = self.parse_precio(precio_ubicacion) 
+        direccion = self.get_one(soup.find_all('div'),'dirección')
         direccion = self.parse_direccion(direccion)
         data_inmueble = self.parse_data_inmueble(soup.find('div',{'name':'datos-ficha'}))
         
-        print(propiedad)
         print(precio)
         print(ubicacion)
         print(direccion)
         print(data_inmueble)
         print()
+    
     def get_one(self, soup, text):
         for item in soup:
             if text in item.text.lower():
@@ -52,6 +58,10 @@ class SoloDuenos:
         ubicacion = None
         precio = None
         for div in divs:
+            if 'direcc' in div.text.lower():
+                break
+            if precio and ubicacion:
+                break
             if div.find_all('div') and len(div.find_all('div')) > 1:
                 continue
             if ubicacion_next and not ubicacion:
@@ -64,6 +74,7 @@ class SoloDuenos:
                 precio = self.clean(div.text)
                 precio = precio.split('$')[-1]
                 if 's' in precio or 'venta' in precio.lower():
+                    precio = None
                     continue
                 precio = int(precio.replace('.','').replace(',',''))
             
@@ -87,16 +98,18 @@ class SoloDuenos:
         data_out = {}
         rows = data.find_all('tr')
         notas = False
-        for row in rows:
-            if 'notas' in row.text.lower():
+        for n, row in enumerate(rows):
+            if n!= 0  and 'notas' in row.text.lower():
                 notas = True
                 continue
             if notas:
                 data_notas = row.find('p')
-                data_notas = self.clean(data_notas) if data_notas else None
-                continue
+                data_notas = self.clean(data_notas.text) if data_notas else None
+                # continue
             if notas and data_notas:
                 data_out['Notas'] = data_notas
+                notas = False
+                continue
             t_datas = row.find_all('td')
             key = None
             value = None
@@ -111,7 +124,7 @@ class SoloDuenos:
                             value = True
                         else: 
                             value = False
-                if ':' in t_data.text and not value:
+                if t_data.text and t_data.text[-1] == ':' and not value:
                     key = self.clean(t_data.text)
                 if key and value != None:
                     data_out[key] = value
