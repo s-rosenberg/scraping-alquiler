@@ -1,0 +1,19 @@
+{
+    "tipo_propiedad": [
+        "departamento",
+        "casa",
+        "ph"
+    ],
+    "operacion": "alquiler",
+    "max_precio": 55000,
+    "ambientes": [
+        2,
+        3,
+        4
+    ],
+    "region":[
+        "capital-federal",
+        "zona-norte",
+        "zona-oeste"
+    ]
+}
