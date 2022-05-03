@@ -11,8 +11,14 @@ class SeleniumHandler:
         self.driver = webdriver.Firefox(options=options)
 
     def __del__(self):
-        self.driver.close()
-        del self.driver
+        try:
+            self.driver.close()
+        except: pass
+        try:
+            self.driver.quit()
+        except: pass
+
+        # del self.driver
         
     def scroll_and_click(self, element):
         if type(element) == list:

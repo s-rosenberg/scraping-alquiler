@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 import time
 import re
+from handles.mongo import mongo
 
 # TODO insert a bbdd (handle)
 # implementar filtros (esto seria en modulo aparte)
@@ -16,6 +17,8 @@ class SoloDuenos:
         self.driver = self.handler.driver
         self.base_url = 'https://www.soloduenos.com/'
         self.session = requests.session()
+        self.mongo = mongo()
+        self.collection = self.mongo.get_collection('solo_duenos')
         self.main()
 
     def main(self):
@@ -25,14 +28,20 @@ class SoloDuenos:
         ]        
 
         propiedades = []
+        propiedades_out = []
         for url in urls:
             propiedades += self.get_propiedades(url)
 
         for propiedad in propiedades:
-            self.get_data(propiedad)
+            data = self.get_data(propiedad)
+            propiedades_out.append(data)
+            if len(propiedades_out) == 20:
+                self.mongo.insert_many(self.collection, propiedades_out)
+                propiedades_out.clear()
+        self.mongo.insert_many(self.collection, propiedades_out)
 
     def get_data(self, propiedad):
-        print(propiedad)
+        # print(propiedad)
         response = self.session.get(propiedad)
         soup = BeautifulSoup(response.text, 'html.parser')
         precio_ubicacion = self.get_one(soup.find_all('div'),'alquiler')
@@ -41,12 +50,18 @@ class SoloDuenos:
         direccion = self.parse_direccion(direccion)
         data_inmueble = self.parse_data_inmueble(soup.find('div',{'name':'datos-ficha'}))
         
-        print(precio)
-        print(ubicacion)
-        print(direccion)
-        print(data_inmueble)
-        print()
-    
+        # print(precio)
+        # print(ubicacion)
+        # print(direccion)
+        # print(data_inmueble)
+        # print()
+        
+        data_inmueble['link'] = propiedad,
+        data_inmueble['precio'] = precio,
+        data_inmueble['ubicacion'] = ubicacion,
+        data_inmueble['direccion'] = direccion,
+            
+        return data_inmueble
     def get_one(self, soup, text):
         for item in soup:
             if text in item.text.lower():

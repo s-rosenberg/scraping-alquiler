@@ -3,3 +3,10 @@ zonaprop
 url para busqueda / filtro
 
 https://www.zonaprop.com.ar/{tipo-propiedades}-{operacion}-{zona}-mas-de-{ambientes}-ambientes-menos-{max_precio}-pesos-pagina-{pagina}.html
+argenprop
+
+https://www.argenprop.com/{tipo-propiedades}-{operacion}-{zona}-{ambientes}-hasta-{max_precio}-pesos-pagina-{pagina}
+
+tipo-propiedaes = departamento-y-casa-y-ph
+zona = localidad-capital-federal / region-zona-norte
+ambientes= 2-ambientes-y-3-ambientes

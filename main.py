@@ -1,8 +1,11 @@
 from paginas.solo_duenos import SoloDuenos
 from paginas.inmuebles_clarin import InmueblesClarin
+from paginas.argenprop import ArgenProp
 
-InmueblesClarin('filtro.json')
-# SoloDuenos()
+# ArgenProp('filtro.json')
+
+# InmueblesClarin('filtro.json')
+SoloDuenos()
 
 # TODO insert a bbdd (handle)
 # implementar filtros (esto seria en modulo aparte)

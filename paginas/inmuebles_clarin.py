@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import json
+from handles.mongo import mongo
 
 class InmueblesClarin:
     def __init__(self, filtro):
@@ -10,6 +11,8 @@ class InmueblesClarin:
         self.base_url = 'https://www.inmuebles.clarin.com'
         self.api_url = 'https://api.sosiva451.com/Avisos/{id}'
         self.headers = self.get_headers()
+        self.mongo = mongo()
+        self.collection = self.mongo.get_collection('clarin')
         self.main()
     
     def main(self):
@@ -41,7 +44,7 @@ class InmueblesClarin:
                         propiedades.append(data_propiedad)
                         print(data_propiedad)
                 pagina += 1
-
+        self.mongo.insert_many(self.collection, propiedades)
     def get_propiedad(self, data):
         data_out = {
             'ubicacion': data.get('Barrio_t'),
